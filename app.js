@@ -1,14 +1,12 @@
 const express = require('express')
 const { Client } = require('pg')
 const bodyParser = require('body-parser')
-const connectionString = 'postgres://postgres:@Shyam02@localhost:5432'
+const connectionString = 'postgres://boss:boss@007@localhost:5432/bossdb'
 const client = new Client({
   connectionString: connectionString
 })
 client.connect()
 var result = []
-var output = []
-var profile = []
 let email
 const app = express()
 
@@ -16,53 +14,25 @@ app.set('view engine', 'ejs')
 app.use(express.static('./public'))
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-app.get('/', (req, res) => {
-  res.render('register')
-})
-app.get('/', (req, res) => {
-  res.render('register')
-})
-app.get('/login', (req, res) => {
-  res.render('login')
-})
 app.get('/home', (req, res) => {
   if (email === undefined) {
-    console.log('nodata')
-    res.render('notLogedIn', { login: 'please login' })
+    res.send({ login: ['please login'] })
   }
   client.query('Select * from login where email LIKE ($1)', [email], (err, result) => {
     if (err) {
       return console.error('error running query', err)
     }
-    res.render('home', { login: result.rows })
+    console.log(result.rows)
+    res.send({ login: result.rows })
   })
 })
 app.post('/register', (req, res) => {
-  client.query('Select * from login where email LIKE ($1) and password LIKE ($2)', [req.body.email, req.body.password], (err, res) => {
-    if (err) {
-      res.status(500).send(err.toString())
-    } else {
-      if (res.rows.length !== 0) {
-        console.log('data found')
-        output.push('success')
+  client.query('INSERT INTO login (username,name,email,password,address,phone) values ($1,$2,$3,$4,$5,$6) ',
+    [req.body.username, req.body.name, req.body.email, req.body.password, req.body.address, req.body.phone], (err, res) => {
+      if (err) {
+        res.status(500).send(err.toString())
       }
-    }
-  })
-  setTimeout(() => {
-    if (req.body.password === req.body.confirmPassword && output[output.length - 1] !== 'success') {
-      client.query('INSERT INTO login (name,email,password) values ($1,$2,$3) ', [req.body.name, req.body.email, req.body.password], (err, res) => {
-        if (err) {
-          res.status(500).send(err.toString())
-        } else {
-          console.log('password matched')
-        }
-      })
-      res.redirect('/login')
-    } else {
-      res.redirect('/')
-      console.log('password doesnot matched or data already exist')
-    }
-  }, 1000)
+    })
 })
 app.post('/login', (req, res) => {
   email = req.body.email
@@ -70,8 +40,6 @@ app.post('/login', (req, res) => {
     if (err) {
       res.status(500).send(err.toString())
     } else {
-      console.log(res.rows)
-      profile.push(res.rows)
       if (res.rows.length === 0) {
         console.log('data not found')
       } else {
@@ -88,9 +56,5 @@ app.post('/login', (req, res) => {
     }
   }, 1000)
 })
-app.post('/logout', (req, res) => {
-  email = undefined
-  res.redirect('/login')
-})
-app.listen('8080')
-console.log('app running on port 8080')
+app.listen('3000')
+console.log('app running on port 3000')
